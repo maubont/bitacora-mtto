@@ -5,8 +5,8 @@ import Login from './pages/Login'
 import TechnicianLog from './pages/TechnicianLog'
 import SupervisorDashboard from './pages/SupervisorDashboard'
 import PendingTasks from './pages/PendingTasks'
+import ReloadPrompt from './components/ReloadPrompt'
 import type { User } from '@supabase/supabase-js'
-
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -39,6 +39,7 @@ function App() {
 
   return (
     <Router>
+      <ReloadPrompt />
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
         <Route
