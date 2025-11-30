@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { generateActivityDescription } from '../lib/openai'
 
 export default function TechnicianLog() {
     const [description, setDescription] = useState('')
     const [category, setCategory] = useState('')
     const [loading, setLoading] = useState(false)
+    const [improving, setImproving] = useState(false)
 
     const categories = [
         'Eléctrico',
@@ -36,6 +38,20 @@ export default function TechnicianLog() {
         }
 
         setLoading(false)
+    }
+
+    const handleImprove = async () => {
+        if (!description) return
+        setImproving(true)
+        try {
+            const improved = await generateActivityDescription(description, category || 'General')
+            setDescription(improved)
+        } catch (error) {
+            console.error(error)
+            alert('Error al mejorar la descripción. Verifica tu API Key.')
+        } finally {
+            setImproving(false)
+        }
     }
 
     const handleLogout = async () => {
@@ -72,8 +88,8 @@ export default function TechnicianLog() {
                                     type="button"
                                     onClick={() => setCategory(cat)}
                                     className={`py-3 px-4 rounded-lg font-medium transition-all ${category === cat
-                                            ? 'bg-accent-primary text-white shadow-lg'
-                                            : 'bg-industrial-700/50 text-industrial-300 hover:bg-industrial-700'
+                                        ? 'bg-accent-primary text-white shadow-lg'
+                                        : 'bg-industrial-700/50 text-industrial-300 hover:bg-industrial-700'
                                         }`}
                                 >
                                     {cat}
@@ -84,9 +100,25 @@ export default function TechnicianLog() {
 
                     {/* Description */}
                     <div className="bg-industrial-800/50 backdrop-blur-sm rounded-xl border border-industrial-700/50 p-6">
-                        <label className="block text-sm font-medium text-industrial-300 mb-4">
-                            Descripción de la actividad
-                        </label>
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="block text-sm font-medium text-industrial-300">
+                                Descripción de la actividad
+                            </label>
+                            <button
+                                type="button"
+                                onClick={handleImprove}
+                                disabled={improving || !description}
+                                className="text-xs flex items-center gap-2 bg-industrial-700 hover:bg-industrial-600 text-accent-secondary px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                            >
+                                {improving ? (
+                                    <span>Mejorando...</span>
+                                ) : (
+                                    <>
+                                        <span>✨ Mejorar con IA</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
