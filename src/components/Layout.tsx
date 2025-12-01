@@ -1,4 +1,5 @@
 import Navigation from './Navigation'
+import { Toaster } from 'sonner'
 
 interface LayoutProps {
     children: React.ReactNode
@@ -7,6 +8,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
     return (
         <div className="flex min-h-screen bg-industrial-900">
+            <Toaster position="top-right" theme="dark" richColors />
             <Navigation />
 
             {/* Main Content */}

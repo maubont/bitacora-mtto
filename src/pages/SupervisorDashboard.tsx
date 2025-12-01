@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
 import * as XLSX from 'xlsx'
@@ -14,6 +14,8 @@ import {
     ChevronDown,
     ChevronUp
 } from 'lucide-react'
+import LoadingSkeleton from '../components/LoadingSkeleton'
+import { toast } from 'sonner'
 
 interface Activity {
     id: string
@@ -40,11 +42,7 @@ export default function SupervisorDashboard() {
     const [expandedRow, setExpandedRow] = useState<string | null>(null)
 
 
-    useEffect(() => {
-        fetchActivities()
-    }, [])
-
-    const fetchActivities = async () => {
+    const fetchActivities = useCallback(async () => {
         setLoading(true)
 
         const { data, error } = await supabase
@@ -57,11 +55,16 @@ export default function SupervisorDashboard() {
 
         if (error) {
             console.error('Error fetching activities:', error)
+            toast.error('Error al cargar actividades')
         } else {
             setActivities(data || [])
         }
         setLoading(false)
-    }
+    }, [])
+
+    useEffect(() => {
+        fetchActivities()
+    }, [fetchActivities])
 
     const filteredActivities = activities.filter(act => {
         const matchesSearch =
@@ -218,7 +221,11 @@ export default function SupervisorDashboard() {
                                 </thead>
                                 <tbody className="divide-y divide-industrial-700">
                                     {loading ? (
-                                        <tr><td colSpan={6} className="px-6 py-8 text-center text-industrial-500">Cargando datos...</td></tr>
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-8">
+                                                <LoadingSkeleton />
+                                            </td>
+                                        </tr>
                                     ) : filteredActivities.length === 0 ? (
                                         <tr><td colSpan={6} className="px-6 py-8 text-center text-industrial-500">No se encontraron registros.</td></tr>
                                     ) : (

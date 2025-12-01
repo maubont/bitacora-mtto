@@ -1,4 +1,4 @@
-import { Calendar, User, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
+import { Calendar, User } from 'lucide-react'
 
 interface Task {
     id: string
@@ -27,12 +27,6 @@ export default function TaskCard({ task, onEdit, onStatusChange, isSupervisor }:
         Alta: 'text-red-500 bg-red-500/10 border-red-500/20',
         Media: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
         Baja: 'text-blue-500 bg-blue-500/10 border-blue-500/20'
-    }
-
-    const statusColors = {
-        'Pendiente': 'text-gray-400 bg-gray-500/10 border-gray-500/20',
-        'En Progreso': 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-        'Completado': 'text-green-400 bg-green-500/10 border-green-500/20'
     }
 
     return (

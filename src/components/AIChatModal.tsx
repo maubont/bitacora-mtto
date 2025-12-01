@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { generateStructuredActivityLog } from '../lib/openai'
 
 interface AIChatModalProps {
@@ -28,6 +28,44 @@ export default function AIChatModal({ isOpen, onClose, onApply, context, initial
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const initialized = useRef(false)
 
+    const handleSend = useCallback(async (textOverride?: string) => {
+        const textToSend = textOverride || input
+        if (!textToSend.trim()) return
+
+        const userMsg: Message = { role: 'user', content: textToSend }
+        setMessages(prev => [...prev, userMsg])
+        if (!textOverride) setInput('')
+        setLoading(true)
+
+        try {
+            // Use current messages + the new user message for history
+            // Note: state updates are async, so we construct the history manually here
+            setMessages(currentMessages => {
+                const currentHistory = currentMessages.map(m => ({ role: m.role, content: m.content }))
+
+                generateStructuredActivityLog(context, textToSend, currentHistory).then(result => {
+                    const assistantMsg: Message = { role: 'assistant', content: result.reply }
+                    setMessages(prev => [...prev, assistantMsg])
+
+                    if (result.description) {
+                        setGeneratedData({ description: result.description, novedad: result.novedad })
+                    }
+                    setLoading(false)
+                }).catch(error => {
+                    console.error(error)
+                    setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error al procesar tu mensaje. Verifica tu conexión o intenta de nuevo.' }])
+                    setLoading(false)
+                })
+
+                return currentMessages
+            })
+        } catch (error) {
+            console.error(error)
+            setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error al procesar tu mensaje. Verifica tu conexión o intenta de nuevo.' }])
+            setLoading(false)
+        }
+    }, [input, context])
+
     useEffect(() => {
         if (isOpen && !initialized.current) {
             initialized.current = true
@@ -52,41 +90,7 @@ export default function AIChatModal({ isOpen, onClose, onApply, context, initial
             setGeneratedData(null)
             initialized.current = false
         }
-    }, [isOpen, context, initialDescription])
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
-
-    const handleSend = async (textOverride?: string) => {
-        const textToSend = textOverride || input
-        if (!textToSend.trim()) return
-
-        const userMsg: Message = { role: 'user', content: textToSend }
-        setMessages(prev => [...prev, userMsg])
-        if (!textOverride) setInput('')
-        setLoading(true)
-
-        try {
-            // Use current messages + the new user message for history
-            // Note: state updates are async, so we construct the history manually here
-            const currentHistory = messages.map(m => ({ role: m.role, content: m.content }))
-
-            const result = await generateStructuredActivityLog(context, textToSend, currentHistory)
-
-            const assistantMsg: Message = { role: 'assistant', content: result.reply }
-            setMessages(prev => [...prev, assistantMsg])
-
-            if (result.description) {
-                setGeneratedData({ description: result.description, novedad: result.novedad })
-            }
-        } catch (error) {
-            console.error(error)
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error al procesar tu mensaje. Verifica tu conexión o intenta de nuevo.' }])
-        } finally {
-            setLoading(false)
-        }
-    }
+    }, [isOpen, context, initialDescription, handleSend])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -119,8 +123,8 @@ export default function AIChatModal({ isOpen, onClose, onApply, context, initial
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[80%] rounded-2xl p-3 ${msg.role === 'user'
-                                    ? 'bg-accent-primary text-white rounded-tr-none'
-                                    : 'bg-industrial-700 text-industrial-100 rounded-tl-none'
+                                ? 'bg-accent-primary text-white rounded-tr-none'
+                                : 'bg-industrial-700 text-industrial-100 rounded-tl-none'
                                 }`}>
                                 <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
                             </div>

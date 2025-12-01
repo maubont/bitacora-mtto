@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { AREAS, EQUIPMENT_LIST, SPECIALTIES, WORK_TYPES, STATUSES } from '../data/lists'
 import AIChatModal from '../components/AIChatModal'
 import Layout from '../components/Layout'
+import LoadingSkeleton from '../components/LoadingSkeleton'
+import { toast } from 'sonner'
 
 export default function TechnicianLog() {
     const [area, setArea] = useState('')
@@ -18,7 +20,6 @@ export default function TechnicianLog() {
     const [novedad, setNovedad] = useState('')
     const [isChatOpen, setIsChatOpen] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [errorMsg, setErrorMsg] = useState<string | null>(null)
     const navigate = useNavigate()
 
     const isFormReady = area && equipment && specialty && workType
@@ -26,7 +27,6 @@ export default function TechnicianLog() {
     const handleSubmit = async () => {
         if (!description.trim()) return
         setLoading(true)
-        setErrorMsg(null)
 
         const { data: { user } } = await supabase.auth.getUser()
 
@@ -50,7 +50,7 @@ export default function TechnicianLog() {
 
         if (error) {
             console.error('Error submitting:', error)
-            setErrorMsg(error.message)
+            toast.error('Error al registrar actividad: ' + error.message)
         } else {
             setDescription('')
             setNovedad('')
@@ -62,7 +62,8 @@ export default function TechnicianLog() {
             setHasOS(false)
             setDuration('')
             setStatus('Ejecutado')
-            alert('✅ Actividad registrada exitosamente')
+            setStatus('Ejecutado')
+            toast.success('✅ Actividad registrada exitosamente')
         }
         setLoading(false)
     }
@@ -214,19 +215,21 @@ export default function TechnicianLog() {
                         </div>
                     </section>
 
-                    {errorMsg && (
-                        <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-xl text-red-200 text-sm">
-                            <strong>Error:</strong> {errorMsg}
-                        </div>
-                    )}
 
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!isFormReady || !description.trim() || loading}
-                        className="w-full bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg shadow-accent-primary/20 transition-all active:scale-[0.98]"
-                    >
-                        {loading ? 'Guardando...' : 'Registrar Actividad'}
-                    </button>
+
+                    {loading ? (
+                        <div className="w-full bg-industrial-800/50 p-4 rounded-xl border border-industrial-700/50">
+                            <LoadingSkeleton />
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!isFormReady || !description.trim()}
+                            className="w-full bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg shadow-accent-primary/20 transition-all active:scale-[0.98]"
+                        >
+                            Registrar Actividad
+                        </button>
+                    )}
                 </main>
 
                 <AIChatModal
